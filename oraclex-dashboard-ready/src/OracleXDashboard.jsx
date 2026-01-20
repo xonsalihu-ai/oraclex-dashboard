@@ -12,11 +12,11 @@ const OracleXFinal = () => {
   const pairsByCategory = {
     'Precious Metals': ['XAUUSD', 'XAGUUSD'],
     'Cryptocurrency': ['BTCUSD', 'ETHUSD'],
-    'Forex': ['EURUSD', 'GBPUSD'],
-    'Indices': ['SPX', 'CCMP']
+    'Forex Major': ['EURUSD', 'GBPUSD'],
+    'Forex Pairs': ['AUDUSD', 'NZDUSD']
   };
 
-  const allSymbols = ['XAUUSD', 'XAGUUSD', 'BTCUSD', 'ETHUSD', 'EURUSD', 'GBPUSD', 'SPX', 'CCMP'];
+  const allSymbols = ['XAUUSD', 'XAGUUSD', 'BTCUSD', 'ETHUSD', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD'];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,8 +68,8 @@ const OracleXFinal = () => {
       'ETHUSD': 'Ξ',
       'EURUSD': '€',
       'GBPUSD': '£',
-      'SPX': 'S',
-      'CCMP': 'N'
+      'AUDUSD': '🇦🇺',
+      'NZDUSD': '🇳🇿'
     };
     return emojis[symbol] || '●';
   };
