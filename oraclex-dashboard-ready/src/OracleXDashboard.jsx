@@ -22,9 +22,9 @@ const OracleXDashboardV4 = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (showLoading = false) => {
       try {
-        setLoading(true);
+        if (showLoading) setLoading(true);
         const relayUrl = 'https://oraclex-relay-production.up.railway.app';
 
         const relayResp = await fetch(`${relayUrl}/get-market-state`);
@@ -45,18 +45,19 @@ const OracleXDashboardV4 = () => {
         }
 
         setMarketData(merged);
-        setLoading(false);
+        if (showLoading) setLoading(false);
       } catch (error) {
         console.error('Fetch error:', error);
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
 
-    // Fetch immediately on mount
-    fetchData();
+    // Fetch immediately on mount with loading state
+    fetchData(true);
 
-    // Poll every 10 seconds for fresh data
-    const interval = setInterval(fetchData, 10000);
+    // Poll every 10 seconds for fresh data WITHOUT showing loading state
+    // This updates data smoothly in background without page flicker
+    const interval = setInterval(() => fetchData(false), 10000);
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
