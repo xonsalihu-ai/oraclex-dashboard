@@ -52,7 +52,14 @@ const OracleXDashboardV4 = () => {
       }
     };
 
+    // Fetch immediately on mount
     fetchData();
+
+    // Poll every 10 seconds for fresh data
+    const interval = setInterval(fetchData, 10000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   const currentSymbolData = marketData[selectedSymbol];
