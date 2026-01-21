@@ -1,46 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Eye, BarChart3, Clock, AlertCircle, Info, ChevronRight, Zap, Activity, ChevronDown, Gauge } from 'lucide-react';
+import { TrendingUp, TrendingDown, Eye, BarChart3, Clock, AlertCircle, Info, ChevronRight, Zap, Activity, ChevronDown, Gauge, Globe } from 'lucide-react';
 
 const OracleXDashboard = () => {
   const [marketData, setMarketData] = useState({});
   const [selectedSymbol, setSelectedSymbol] = useState('XAUUSD');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('analysis');
-  const [expandedIndicator, setExpandedIndicator] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [selectedTimeframe, setSelectedTimeframe] = useState('M1');
 
-  // Original 7 symbols (removed XAGUUSD as per current system)
+  // All 8 symbols - restored including XAGUUSD
   const pairsByCategory = {
-    'Precious Metals': ['XAUUSD'],
+    'Precious Metals': ['XAUUSD', 'XAGUUSD'],
     'Cryptocurrency': ['BTCUSD', 'ETHUSD'],
     'Forex Major': ['EURUSD', 'GBPUSD'],
     'Forex Pairs': ['AUDUSD', 'NZDUSD']
   };
 
-  const allSymbols = ['XAUUSD', 'BTCUSD', 'ETHUSD', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD'];
-  const timeframes = ['M1', 'M5', 'M15', 'H1', 'H4', 'D1', 'W1'];
+  const allSymbols = ['XAUUSD', 'XAGUUSD', 'BTCUSD', 'ETHUSD', 'EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD'];
 
-  // Fetch from Relay which has Python analysis merged in
+  // Get decimal places based on symbol type
+  const getDecimalPlaces = (symbol) => {
+    if (['EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD'].includes(symbol)) {
+      return 5; // Forex pairs: 5 decimals
+    }
+    if (['XAUUSD', 'XAGUUSD'].includes(symbol)) {
+      return 2; // Precious metals: 2 decimals
+    }
+    return 2; // Crypto: 2 decimals
+  };
+
+  // Fetch data from Relay + Python analysis
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const relayUrl = 'https://oraclex-relay-production.up.railway.app';
 
+        // Fetch market state from Relay
         const relayResp = await fetch(`${relayUrl}/get-market-state`);
-        if (relayResp.ok) {
-          const relayData = await relayResp.json();
-          
-          const merged = {};
-          for (const sym of allSymbols) {
-            const symData = relayData.market_data?.find(s => s.symbol === sym);
-            merged[sym] = symData || { symbol: sym };
+        const relayData = await relayResp.json();
+        
+        // Fetch analysis from Relay proxy to Python
+        let analysisData = {};
+        try {
+          const analysisResp = await fetch(`${relayUrl}/latest-analysis`);
+          if (analysisResp.ok) {
+            const data = await analysisResp.json();
+            // Map analyses by symbol for easy lookup
+            if (data.analyses && Array.isArray(data.analyses)) {
+              data.analyses.forEach(analysis => {
+                analysisData[analysis.symbol] = analysis;
+              });
+            }
           }
-          
-          setMarketData(merged);
+        } catch (e) {
+          console.warn('Could not fetch analysis:', e);
         }
 
+        // Merge market data + analysis
+        const merged = {};
+        for (const sym of allSymbols) {
+          const symMarketData = relayData.market_data?.find(s => s.symbol === sym);
+          const symAnalysis = analysisData[sym] || {};
+          
+          merged[sym] = {
+            symbol: sym,
+            price: symMarketData?.price || 0,
+            bid: symMarketData?.bid || 0,
+            ask: symMarketData?.ask || 0,
+            spread_points: symMarketData?.spread_points || 0,
+            ...symAnalysis // Analysis overlays everything
+          };
+        }
+
+        setMarketData(merged);
         setLastUpdate(new Date());
         setLoading(false);
       } catch (error) {
@@ -56,39 +89,6 @@ const OracleXDashboard = () => {
 
   const currentSymbolData = marketData[selectedSymbol];
 
-  const getPairCategory = (symbol) => {
-    for (const [category, symbols] of Object.entries(pairsByCategory)) {
-      if (symbols.includes(symbol)) return category;
-    }
-    return 'Unknown';
-  };
-
-  const getPairGradient = (symbol) => {
-    const gradients = {
-      'XAUUSD': 'from-amber-600 via-amber-500 to-yellow-500',
-      'BTCUSD': 'from-orange-600 via-orange-500 to-amber-500',
-      'ETHUSD': 'from-purple-600 via-purple-500 to-blue-500',
-      'EURUSD': 'from-blue-600 via-blue-500 to-cyan-500',
-      'GBPUSD': 'from-indigo-600 via-blue-500 to-blue-400',
-      'AUDUSD': 'from-emerald-600 via-emerald-500 to-green-500',
-      'NZDUSD': 'from-cyan-600 via-cyan-500 to-blue-500'
-    };
-    return gradients[symbol] || 'from-slate-600 to-slate-500';
-  };
-
-  const getSymbolEmoji = (symbol) => {
-    const emojis = {
-      'XAUUSD': '⊙',
-      'BTCUSD': '₿',
-      'ETHUSD': 'Ξ',
-      'EURUSD': '€',
-      'GBPUSD': '£',
-      'AUDUSD': '🇦🇺',
-      'NZDUSD': '🇳🇿'
-    };
-    return emojis[symbol] || '●';
-  };
-
   const getConfluenceColor = (value) => {
     if (!value) return 'text-slate-400';
     if (value >= 70) return 'text-emerald-400';
@@ -100,6 +100,20 @@ const OracleXDashboard = () => {
     if (bias === 'BULLISH') return 'text-emerald-400';
     if (bias === 'BEARISH') return 'text-red-400';
     return 'text-amber-400';
+  };
+
+  const getSymbolEmoji = (symbol) => {
+    const emojis = {
+      'XAUUSD': '⊙',
+      'XAGUUSD': '◇',
+      'BTCUSD': '₿',
+      'ETHUSD': 'Ξ',
+      'EURUSD': '€',
+      'GBPUSD': '£',
+      'AUDUSD': '🇦🇺',
+      'NZDUSD': '🇳🇿'
+    };
+    return emojis[symbol] || '●';
   };
 
   if (loading) {
@@ -219,7 +233,7 @@ const OracleXDashboard = () => {
                       <div>
                         <p className="text-slate-500 text-sm mb-2">Price</p>
                         <p className="text-3xl font-light text-slate-100">
-                          ${(currentSymbolData.price || 0).toFixed(2)}
+                          ${currentSymbolData.price?.toFixed(getDecimalPlaces(selectedSymbol)) || '0.00'}
                         </p>
                       </div>
                       <div>
@@ -238,11 +252,12 @@ const OracleXDashboard = () => {
                   </div>
 
                   {/* Tab Navigation */}
-                  <div className="flex gap-2 border-b border-slate-700/30">
+                  <div className="flex gap-2 border-b border-slate-700/30 overflow-x-auto">
                     {[
                       { id: 'analysis', label: 'Analysis', icon: Eye },
                       { id: 'bias', label: 'Bias Stability', icon: Zap },
                       { id: 'confluence', label: 'Confluence', icon: BarChart3 },
+                      { id: 'session', label: 'Session', icon: Globe },
                       { id: 'timeline', label: 'Timeline', icon: Clock }
                     ].map(tab => {
                       const Icon = tab.icon;
@@ -250,7 +265,7 @@ const OracleXDashboard = () => {
                         <button
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                             activeTab === tab.id
                               ? 'text-emerald-400 border-b-2 border-emerald-400'
                               : 'text-slate-400 hover:text-slate-300'
@@ -267,11 +282,11 @@ const OracleXDashboard = () => {
                   {activeTab === 'analysis' && (
                     <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6">
                       <h3 className="text-sm font-semibold text-slate-300 mb-4">Market Interpretation</h3>
-                      <p className="text-slate-300 leading-relaxed">
+                      <p className="text-slate-300 leading-relaxed mb-6">
                         {currentSymbolData.interpretation || 'Analyzing market conditions...'}
                       </p>
 
-                      <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-700/30">
+                      <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-700/30">
                         <div>
                           <p className="text-xs text-slate-500 mb-2">TREND</p>
                           <p className="text-slate-300 font-medium">{currentSymbolData.market_regime?.trend || '—'}</p>
@@ -319,7 +334,7 @@ const OracleXDashboard = () => {
                             <div className="flex justify-between items-center mb-2">
                               <span className="text-sm text-slate-400">{factor.replace(/_/g, ' ')}</span>
                               <span className={`text-xs font-medium ${data?.active ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                {data?.active ? '✓ Active' : '○ Inactive'}
+                                {data?.active ? '✓ Active' : '○ Inactive'} • {((data?.weight || 0) * 100).toFixed(0)}%
                               </span>
                             </div>
                             <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden">
@@ -330,6 +345,48 @@ const OracleXDashboard = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Content - Session Intelligence */}
+                  {activeTab === 'session' && (
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6">
+                      <h3 className="text-sm font-semibold text-slate-300 mb-6">Session Intelligence</h3>
+                      <div className="mb-6">
+                        <p className="text-slate-500 text-sm mb-2">Current Session</p>
+                        <p className="text-2xl font-medium text-emerald-400">
+                          {currentSymbolData.session || 'Unknown'}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-4 mb-6">
+                        <p className="text-xs text-slate-500 mb-3">Session Description</p>
+                        <p className="text-sm text-slate-300">
+                          {currentSymbolData.session === 'Asia' && 'Low volatility session with focus on yen pairs and Asian indices. Volume typically ramps up mid-session.'}
+                          {currentSymbolData.session === 'Europe' && 'High volatility session with strong participation. This is when major technical moves often occur.'}
+                          {currentSymbolData.session === 'US' && 'Peak volatility with US economic data releases. Largest volume and most directional moves.'}
+                          {currentSymbolData.session === 'Overlap' && 'Session overlap period. Mixed volatility with opportunities at market transitions.'}
+                          {!currentSymbolData.session || (currentSymbolData.session !== 'Asia' && currentSymbolData.session !== 'Europe' && currentSymbolData.session !== 'US' && currentSymbolData.session !== 'Overlap') && 'Analyzing current session...'}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/30">
+                          <p className="text-xs text-slate-500 mb-2">Typical Reaction</p>
+                          <p className="text-sm font-medium text-emerald-400">Continuation</p>
+                          <p className="text-xs text-slate-400 mt-1">{currentSymbolData.state_statistics?.continuation || 0}%</p>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/30">
+                          <p className="text-xs text-slate-500 mb-2">Typical Reaction</p>
+                          <p className="text-sm font-medium text-red-400">Reversal</p>
+                          <p className="text-xs text-slate-400 mt-1">{currentSymbolData.state_statistics?.reversal || 0}%</p>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/30">
+                          <p className="text-xs text-slate-500 mb-2">Typical Reaction</p>
+                          <p className="text-sm font-medium text-amber-400">Consolidation</p>
+                          <p className="text-xs text-slate-400 mt-1">{currentSymbolData.state_statistics?.consolidation || 0}%</p>
+                        </div>
                       </div>
                     </div>
                   )}
