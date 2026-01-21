@@ -94,7 +94,7 @@ const OracleXDashboard = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 30000); // 30 second refresh - less flickering
     return () => clearInterval(interval);
   }, []);
 
