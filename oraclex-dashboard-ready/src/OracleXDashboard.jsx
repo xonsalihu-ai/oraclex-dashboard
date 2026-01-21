@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, BarChart3, Activity, Globe, AlertCircle, ChevronRight } from 'lucide-react';
+import { BarChart3, Activity, Globe, AlertCircle, TrendingUp, TrendingDown, Zap } from 'lucide-react';
 
-const OracleXDashboardV31 = () => {
+const OracleXDashboardV4 = () => {
   const [marketData, setMarketData] = useState({});
   const [selectedSymbol, setSelectedSymbol] = useState('XAUUSD');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('analysis');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const pairsByCategory = {
     'Precious Metals': ['XAUUSD', 'XAGUUSD'],
@@ -21,7 +21,6 @@ const OracleXDashboardV31 = () => {
     return 2;
   };
 
-  // Fetch data ONCE on mount, no auto-refresh
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,31 +53,28 @@ const OracleXDashboardV31 = () => {
     };
 
     fetchData();
-    // NO interval - removed auto-refresh
   }, []);
 
   const currentSymbolData = marketData[selectedSymbol];
 
-  const getConfluenceColor = (value) => {
-    if (!value) return 'text-slate-400';
-    if (value >= 75) return 'text-emerald-400';
-    if (value >= 60) return 'text-green-400';
-    if (value >= 45) return 'text-amber-400';
-    return 'text-red-400';
+  const getConfluenceLevel = (value) => {
+    if (value >= 75) return { color: 'text-emerald-400', label: 'Very Strong', bg: 'from-emerald-600 to-emerald-800' };
+    if (value >= 60) return { color: 'text-green-400', label: 'Strong', bg: 'from-green-600 to-green-800' };
+    if (value >= 45) return { color: 'text-amber-400', label: 'Moderate', bg: 'from-amber-600 to-amber-800' };
+    return { color: 'text-red-400', label: 'Weak', bg: 'from-red-600 to-red-800' };
   };
 
-  const getBiasColor = (bias) => {
-    if (bias === 'BULLISH') return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-    if (bias === 'BEARISH') return 'bg-red-500/20 text-red-400 border-red-500/30';
-    return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+  const getBiasDisplay = (bias) => {
+    if (bias === 'BULLISH') return { icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30' };
+    if (bias === 'BEARISH') return { icon: TrendingDown, color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30' };
+    return { icon: AlertCircle, color: 'text-slate-400', bg: 'bg-slate-500/20', border: 'border-slate-500/30' };
   };
 
-  const getGradeColor = (grade) => {
-    if (grade === 'A+') return 'text-emerald-400';
-    if (grade === 'A') return 'text-green-400';
-    if (grade === 'B+') return 'text-amber-400';
-    if (grade === 'B') return 'text-yellow-400';
-    return 'text-red-400';
+  const getVolatilityColor = (vol) => {
+    if (vol === 'Extreme') return 'text-red-400';
+    if (vol === 'Elevated') return 'text-amber-400';
+    if (vol === 'Quiet') return 'text-emerald-400';
+    return 'text-slate-400';
   };
 
   const getSymbolEmoji = (symbol) => {
@@ -107,7 +103,7 @@ const OracleXDashboardV31 = () => {
           </div>
           <div>
             <h2 className="text-2xl font-light text-emerald-400 tracking-wide">OracleX</h2>
-            <p className="text-sm text-slate-400 mt-2">Loading market intelligence...</p>
+            <p className="text-sm text-slate-400 mt-2">Market Intelligence Platform</p>
           </div>
         </div>
       </div>
@@ -116,7 +112,6 @@ const OracleXDashboardV31 = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      {/* Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
@@ -126,11 +121,9 @@ const OracleXDashboardV31 = () => {
         {/* Header */}
         <div className="border-b border-slate-800/50 backdrop-blur-sm sticky top-0 z-20 bg-slate-900/50">
           <div className="max-w-[1920px] mx-auto px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-light text-emerald-400 tracking-tight">OracleX</h1>
-                <p className="text-sm text-slate-500 mt-1">Institutional Market Intelligence</p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-light text-emerald-400 tracking-tight">OracleX</h1>
+              <p className="text-sm text-slate-500 mt-1">Professional Market Intelligence Platform</p>
             </div>
           </div>
         </div>
@@ -138,7 +131,7 @@ const OracleXDashboardV31 = () => {
         {/* Main Content */}
         <div className="max-w-[1920px] mx-auto px-8 py-8">
           <div className="grid grid-cols-5 gap-8">
-            {/* Left Sidebar - Symbol Selection */}
+            {/* Sidebar */}
             <div className="col-span-1">
               <div className="space-y-6 sticky top-24">
                 {Object.entries(pairsByCategory).map(([category, symbols]) => (
@@ -149,6 +142,7 @@ const OracleXDashboardV31 = () => {
                         const data = marketData[symbol];
                         const isSelected = selectedSymbol === symbol;
                         const confluence = data?.confluence || 0;
+                        const confluenceLevel = getConfluenceLevel(confluence);
 
                         return (
                           <button
@@ -160,7 +154,7 @@ const OracleXDashboardV31 = () => {
                                 : 'bg-slate-900/30 border border-slate-800/30 hover:border-slate-700/50'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-lg">{getSymbolEmoji(symbol)}</span>
                                 <span className={`font-medium text-sm ${isSelected ? 'text-slate-100' : 'text-slate-400'}`}>
@@ -168,8 +162,11 @@ const OracleXDashboardV31 = () => {
                                 </span>
                               </div>
                             </div>
-                            <div className={`text-sm mt-2 font-semibold ${getConfluenceColor(confluence)}`}>
-                              {confluence ? `${confluence.toFixed(1)}%` : '—'}
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-semibold ${confluenceLevel.color}`}>
+                                {confluence ? `${confluence.toFixed(0)}%` : '—'}
+                              </span>
+                              <span className="text-xs text-slate-500">{confluenceLevel.label}</span>
                             </div>
                           </button>
                         );
@@ -180,153 +177,154 @@ const OracleXDashboardV31 = () => {
               </div>
             </div>
 
-            {/* Main Content Area */}
+            {/* Main Panel */}
             <div className="col-span-4">
               {currentSymbolData ? (
                 <div className="space-y-6">
-                  {/* Price and Key Metrics - Clean Card */}
-                  <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
-                    <div className="grid grid-cols-5 gap-6">
+                  {/* Price Header */}
+                  <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-8 backdrop-blur-sm">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-slate-500 text-xs mb-2">Price</p>
-                        <p className="text-3xl font-light text-slate-100">
+                        <p className="text-slate-500 text-sm mb-2">Current Price</p>
+                        <p className="text-5xl font-light text-slate-100 mb-6">
                           ${currentSymbolData.price?.toFixed(getDecimalPlaces(selectedSymbol)) || '0.00'}
                         </p>
                       </div>
-
-                      <div>
-                        <p className="text-slate-500 text-xs mb-2">Bias</p>
-                        <div className={`text-sm font-medium px-3 py-1 rounded-full border w-fit ${getBiasColor(currentSymbolData.bias)}`}>
-                          {currentSymbolData.bias || '—'}
+                      <div className="text-right">
+                        <p className="text-slate-500 text-sm mb-2">Market Bias</p>
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border ${getBiasDisplay(currentSymbolData.bias).bg} ${getBiasDisplay(currentSymbolData.bias).border}`}>
+                          <span className={`font-medium text-sm ${getBiasDisplay(currentSymbolData.bias).color}`}>
+                            {currentSymbolData.bias || 'NEUTRAL'}
+                          </span>
                         </div>
-                      </div>
-
-                      <div>
-                        <p className="text-slate-500 text-xs mb-2">Confluence</p>
-                        <p className={`text-3xl font-light ${getConfluenceColor(currentSymbolData.confluence)}`}>
-                          {currentSymbolData.confluence?.toFixed(1) || '0'}%
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-slate-500 text-xs mb-2">Confidence</p>
-                        <p className="text-3xl font-light text-slate-300">
-                          {currentSymbolData.confidence?.toFixed(1) || '0'}%
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-slate-500 text-xs mb-2">Grade</p>
-                        <p className={`text-3xl font-light ${getGradeColor(currentSymbolData.risk_opportunity?.grade)}`}>
-                          {currentSymbolData.risk_opportunity?.grade || '—'}
-                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Interpretation */}
+                  {/* Market Interpretation */}
                   {currentSymbolData.interpretation && (
                     <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
-                      <p className="text-sm text-slate-400 mb-3 flex items-center gap-2">
-                        <AlertCircle size={14} className="text-emerald-400" /> Market Interpretation
+                      <p className="text-sm text-slate-400 mb-4 flex items-center gap-2">
+                        <Zap size={14} className="text-emerald-400" /> Market Analysis
                       </p>
-                      <p className="text-slate-300 leading-relaxed text-sm">
+                      <p className="text-slate-300 leading-relaxed">
                         {currentSymbolData.interpretation}
                       </p>
                     </div>
                   )}
 
-                  {/* Two Column Section */}
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Multi-Timeframe */}
+                  {/* Three Column Analysis */}
+                  <div className="grid grid-cols-3 gap-6">
+                    {/* Confluence Analysis */}
                     <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
-                      <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                        <BarChart3 size={16} className="text-emerald-400" /> Multi-Timeframe
-                      </h3>
-                      {currentSymbolData.multi_timeframe?.timeframe_bias && Object.keys(currentSymbolData.multi_timeframe.timeframe_bias).length > 0 ? (
-                        <div className="space-y-3">
-                          {Object.entries(currentSymbolData.multi_timeframe.timeframe_bias).map(([tf, data]) => (
-                            <div key={tf}>
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-medium text-slate-400">{tf}</span>
-                                <span className={`text-xs font-medium ${data.bias === 'BULLISH' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                  {data.bias}
-                                </span>
-                              </div>
-                              <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full transition-all ${data.bias === 'BULLISH' ? 'bg-emerald-500' : 'bg-red-500'}`}
-                                  style={{ width: '80%' }}
-                                ></div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-slate-500 text-xs">Insufficient data</p>
-                      )}
-                    </div>
-
-                    {/* Risk/Opportunity */}
-                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
-                      <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                        <Activity size={16} className="text-emerald-400" /> Risk Assessment
-                      </h3>
+                      <h3 className="text-sm font-semibold text-slate-300 mb-6">Technical Confluence</h3>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-slate-500 text-xs mb-2">Risk Level: {currentSymbolData.risk_opportunity?.risk_level || '—'}</p>
-                          <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${
-                                currentSymbolData.risk_opportunity?.risk_score < 33
-                                  ? 'bg-emerald-500'
-                                  : currentSymbolData.risk_opportunity?.risk_score < 66
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
-                              style={{ width: `${currentSymbolData.risk_opportunity?.risk_score || 0}%` }}
-                            ></div>
+                          <p className="text-slate-500 text-xs mb-3">Confluence Score</p>
+                          <div className="relative h-16 flex items-center justify-center">
+                            <div className="text-center">
+                              <p className={`text-4xl font-light ${getConfluenceLevel(currentSymbolData.confluence).color}`}>
+                                {currentSymbolData.confluence?.toFixed(0) || '0'}%
+                              </p>
+                              <p className="text-xs text-slate-500 mt-2">
+                                {getConfluenceLevel(currentSymbolData.confluence).label} Agreement
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Opportunity</p>
-                          <p className="text-2xl font-light text-emerald-400">
-                            {currentSymbolData.risk_opportunity?.opportunity_score?.toFixed(0) || '0'}%
-                          </p>
+                        <div className="border-t border-slate-700/30 pt-4">
+                          <p className="text-xs text-slate-500 mb-2">Confidence Level</p>
+                          <p className="text-2xl font-light text-slate-300">{currentSymbolData.confidence?.toFixed(0) || '0'}%</p>
                         </div>
                       </div>
                     </div>
+
+                    {/* Market Regime */}
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
+                      <h3 className="text-sm font-semibold text-slate-300 mb-6">Market Regime</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-slate-500 text-xs mb-2">Trend</p>
+                          <p className="text-slate-300 font-medium">{currentSymbolData.market_regime?.trend || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-2">Volatility</p>
+                          <p className={`font-medium ${getVolatilityColor(currentSymbolData.market_regime?.volatility)}`}>
+                            {currentSymbolData.market_regime?.volatility || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-2">Structure</p>
+                          <p className="text-slate-300">{currentSymbolData.market_regime?.structure || '—'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Multi-Timeframe */}
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
+                      <h3 className="text-sm font-semibold text-slate-300 mb-6">Timeframe Alignment</h3>
+                      {currentSymbolData.multi_timeframe?.timeframe_bias && Object.keys(currentSymbolData.multi_timeframe.timeframe_bias).length > 0 ? (
+                        <div className="space-y-2">
+                          {Object.entries(currentSymbolData.multi_timeframe.timeframe_bias).slice(0, 5).map(([tf, data]) => (
+                            <div key={tf} className="flex items-center justify-between text-sm">
+                              <span className="text-slate-400">{tf}</span>
+                              <span className={`font-medium ${data.bias === 'BULLISH' ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {data.bias === 'BULLISH' ? '↑' : '↓'}
+                              </span>
+                            </div>
+                          ))}
+                          {currentSymbolData.multi_timeframe?.dominant_tf && (
+                            <div className="border-t border-slate-700/30 pt-3 mt-3">
+                              <p className="text-xs text-slate-500 mb-1">Dominant TF</p>
+                              <p className="text-emerald-400 font-medium">{currentSymbolData.multi_timeframe.dominant_tf}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-sm">Insufficient data</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Liquidity Levels */}
+                  {/* Key Levels */}
                   {currentSymbolData.liquidity && (
                     <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm">
-                      <h3 className="text-sm font-semibold text-slate-300 mb-4">Key Levels</h3>
-                      <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-slate-300 mb-6">Key Price Levels</h3>
+                      <div className="space-y-4">
                         {currentSymbolData.liquidity.resistance && currentSymbolData.liquidity.resistance.length > 0 && (
                           <div>
-                            <p className="text-xs text-slate-500 mb-2">Resistance</p>
-                            {currentSymbolData.liquidity.resistance.map((level, idx) => (
-                              <div key={idx} className="text-xs text-red-400 mb-1">
-                                ${level.price?.toFixed(getDecimalPlaces(selectedSymbol))}
-                              </div>
-                            ))}
+                            <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Resistance</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {currentSymbolData.liquidity.resistance.map((level, idx) => (
+                                <div key={idx} className="bg-red-500/10 border border-red-500/20 rounded px-3 py-2">
+                                  <p className="text-sm text-red-400 font-medium">
+                                    ${level.price?.toFixed(getDecimalPlaces(selectedSymbol))}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between bg-slate-700/20 border border-slate-600/30 rounded p-2 my-2">
-                          <span className="text-xs text-slate-400">Current</span>
-                          <span className="text-sm font-medium text-emerald-400">${currentSymbolData.price?.toFixed(getDecimalPlaces(selectedSymbol))}</span>
+                        <div className="bg-slate-700/20 border border-slate-600/30 rounded-lg p-4">
+                          <p className="text-xs text-slate-500 mb-2">Current Price</p>
+                          <p className="text-2xl font-light text-emerald-400">
+                            ${currentSymbolData.price?.toFixed(getDecimalPlaces(selectedSymbol))}
+                          </p>
                         </div>
 
                         {currentSymbolData.liquidity.support && currentSymbolData.liquidity.support.length > 0 && (
                           <div>
-                            <p className="text-xs text-slate-500 mb-2">Support</p>
-                            {currentSymbolData.liquidity.support.map((level, idx) => (
-                              <div key={idx} className="text-xs text-emerald-400 mb-1">
-                                ${level.price?.toFixed(getDecimalPlaces(selectedSymbol))}
-                              </div>
-                            ))}
+                            <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Support</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {currentSymbolData.liquidity.support.map((level, idx) => (
+                                <div key={idx} className="bg-emerald-500/10 border border-emerald-500/20 rounded px-3 py-2">
+                                  <p className="text-sm text-emerald-400 font-medium">
+                                    ${level.price?.toFixed(getDecimalPlaces(selectedSymbol))}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -336,8 +334,8 @@ const OracleXDashboardV31 = () => {
                   {/* Tabs */}
                   <div className="flex gap-2 border-b border-slate-700/30">
                     {[
-                      { id: 'analysis', label: 'Analysis' },
-                      { id: 'microstructure', label: 'Microstructure' },
+                      { id: 'overview', label: 'Overview' },
+                      { id: 'details', label: 'Details' },
                       { id: 'session', label: 'Session' }
                     ].map(tab => (
                       <button
@@ -354,56 +352,71 @@ const OracleXDashboardV31 = () => {
                     ))}
                   </div>
 
-                  {/* Tab Content */}
-                  {activeTab === 'analysis' && (
-                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm space-y-4 text-sm">
-                      <div>
-                        <p className="text-slate-500 mb-2">Bias</p>
-                        <p className="text-slate-300">{currentSymbolData.bias_stability?.bias || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 mb-2">Active Since</p>
-                        <p className="text-slate-300">{currentSymbolData.bias_stability?.active_since_minutes || 0} min</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 mb-2">Multi-TF Agreement</p>
-                        <p className="text-emerald-400 font-medium">{currentSymbolData.bias_stability?.multi_tf_agreement?.toFixed(0) || 0}%</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'microstructure' && (
-                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm space-y-4 text-sm">
-                      <div className="grid grid-cols-3 gap-4">
+                  {/* Tab: Overview */}
+                  {activeTab === 'overview' && (
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm text-sm space-y-4">
+                      <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <p className="text-slate-500 mb-2">Bid</p>
-                          <p className="text-slate-300">${currentSymbolData.microstructure?.bid?.toFixed(getDecimalPlaces(selectedSymbol))}</p>
+                          <p className="text-slate-500 mb-2">Current Bias</p>
+                          <p className="text-slate-300">{currentSymbolData.bias_stability?.bias || '—'}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 mb-2">Ask</p>
-                          <p className="text-slate-300">${currentSymbolData.microstructure?.ask?.toFixed(getDecimalPlaces(selectedSymbol))}</p>
+                          <p className="text-slate-500 mb-2">Bias Active Since</p>
+                          <p className="text-slate-300">{currentSymbolData.bias_stability?.active_since_minutes || 0} minutes</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 mb-2">Spread</p>
-                          <p className="text-emerald-400">{currentSymbolData.microstructure?.spread_pct?.toFixed(3)}%</p>
+                          <p className="text-slate-500 mb-2">Multi-TF Agreement</p>
+                          <p className="text-emerald-400 font-medium">{currentSymbolData.bias_stability?.multi_tf_agreement?.toFixed(0) || 0}%</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 mb-2">Technical Strength</p>
+                          <p className="text-slate-300">{getConfluenceLevel(currentSymbolData.confluence).label}</p>
                         </div>
                       </div>
                     </div>
                   )}
 
+                  {/* Tab: Details */}
+                  {activeTab === 'details' && (
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm text-sm space-y-6">
+                      <div>
+                        <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-4">Microstructure</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="bg-slate-900/30 rounded p-3">
+                            <p className="text-slate-500 text-xs mb-2">Bid</p>
+                            <p className="text-slate-300">${currentSymbolData.microstructure?.bid?.toFixed(getDecimalPlaces(selectedSymbol))}</p>
+                          </div>
+                          <div className="bg-slate-900/30 rounded p-3">
+                            <p className="text-slate-500 text-xs mb-2">Ask</p>
+                            <p className="text-slate-300">${currentSymbolData.microstructure?.ask?.toFixed(getDecimalPlaces(selectedSymbol))}</p>
+                          </div>
+                          <div className="bg-slate-900/30 rounded p-3">
+                            <p className="text-slate-500 text-xs mb-2">Spread</p>
+                            <p className="text-emerald-400">{currentSymbolData.microstructure?.spread_pct?.toFixed(3)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Spread Interpretation</p>
+                        <p className="text-slate-300 text-sm">{currentSymbolData.microstructure?.interpretation || '—'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab: Session */}
                   {activeTab === 'session' && (
-                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm space-y-4 text-sm">
+                    <div className="bg-slate-800/20 border border-slate-700/30 rounded-lg p-6 backdrop-blur-sm text-sm space-y-4">
                       <div>
-                        <p className="text-slate-500 mb-2">Session</p>
-                        <p className="text-slate-300 text-lg font-medium">{currentSymbolData.session?.current_session || '—'}</p>
+                        <p className="text-slate-500 mb-2">Current Session</p>
+                        <p className="text-2xl font-light text-emerald-400">{currentSymbolData.session?.current_session || '—'}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 mb-2">Hours</p>
+                        <p className="text-slate-500 text-xs mb-2">Session Hours</p>
                         <p className="text-slate-300">{currentSymbolData.session?.session_hours}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 mb-2">Typical Volatility</p>
-                        <p className="text-slate-300">{currentSymbolData.session?.typical_volatility || 0}%</p>
+                        <p className="text-slate-500 text-xs mb-2">Typical Volatility</p>
+                        <p className="text-slate-300">{currentSymbolData.session?.typical_volatility || 0}% historical average</p>
                       </div>
                     </div>
                   )}
@@ -422,4 +435,4 @@ const OracleXDashboardV31 = () => {
   );
 };
 
-export default OracleXDashboardV31;
+export default OracleXDashboardV4;
