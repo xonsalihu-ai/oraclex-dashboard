@@ -27,17 +27,17 @@ const OracleXDashboardV4 = () => {
         if (showLoading) setLoading(true);
         const relayUrl = 'https://oraclex-relay-production.up.railway.app';
 
-        const relayResp = await fetch(`${relayUrl}/get-market-state`);
-        const relayData = await relayResp.json();
-        
         let merged = {};
+        
+        // Fetch analysis for each symbol directly from /analysis endpoint
         for (const sym of allSymbols) {
           try {
             const analysisResp = await fetch(`${relayUrl}/analysis/${sym}`);
             if (analysisResp.ok) {
               const analysis = await analysisResp.json();
-              const symMarketData = relayData.market_data?.find(s => s.symbol === sym);
-              merged[sym] = { ...symMarketData, ...analysis };
+              merged[sym] = analysis;
+            } else {
+              console.warn(`Analysis returned ${analysisResp.status} for ${sym}`);
             }
           } catch (e) {
             console.warn(`Could not fetch ${sym}:`, e);
@@ -273,11 +273,11 @@ const OracleXDashboardV4 = () => {
                       <h3 className="text-sm font-semibold text-slate-300 mb-6">Timeframe Alignment</h3>
                       {currentSymbolData.multi_timeframe?.timeframe_bias && Object.keys(currentSymbolData.multi_timeframe.timeframe_bias).length > 0 ? (
                         <div className="space-y-2">
-                          {Object.entries(currentSymbolData.multi_timeframe.timeframe_bias).slice(0, 5).map(([tf, data]) => (
+                          {Object.entries(currentSymbolData.multi_timeframe.timeframe_bias).slice(0, 7).map(([tf, data]) => (
                             <div key={tf} className="flex items-center justify-between text-sm">
                               <span className="text-slate-400">{tf}</span>
-                              <span className={`font-medium ${data.bias === 'BULLISH' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {data.bias === 'BULLISH' ? '↑' : '↓'}
+                              <span className={`font-medium ${data.bias === 'BULLISH' ? 'text-emerald-400' : data.bias === 'BEARISH' ? 'text-red-400' : 'text-slate-400'}`}>
+                                {data.bias === 'BULLISH' ? '↑' : data.bias === 'BEARISH' ? '↓' : '→'}
                               </span>
                             </div>
                           ))}
